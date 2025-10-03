@@ -9,20 +9,26 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapp.ui.theme.MyAndroidAppTheme
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(onDone: () -> Unit) {
     var visible by remember { mutableStateOf(false) }
+    val isPreview = LocalInspectionMode.current
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(isPreview) {
         visible = true
-        delay(1500)
-        onDone()
+        if (!isPreview) {
+            delay(1500)
+            onDone()
+        }
     }
 
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -48,3 +54,8 @@ fun SplashScreen(onDone: () -> Unit) {
     }
 }
 
+@Preview(showBackground = true, showSystemUi = true, name = "Splash")
+@Composable
+fun SplashScreenPreview() {
+    MyAndroidAppTheme { SplashScreen(onDone = {}) }
+}

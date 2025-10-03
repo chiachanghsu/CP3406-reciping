@@ -1,4 +1,5 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.example.myapp.ui.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -8,11 +9,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -22,12 +28,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapp.ui.screens.HomeScreen
 import com.example.myapp.ui.screens.ProfileScreen
-import com.example.myapp.ui.screens.SearchScreen
+import com.example.myapp.ui.screens.SearchScreen   // If your file is SearchingScreen.kt, change call below to SearchingScreen()
 import com.example.myapp.ui.screens.SplashScreen
-
+import com.example.myapp.ui.theme.MyAndroidAppTheme
 
 @Composable
-fun AppNavHost() {
+fun AppNavHost(startDestination: String = Routes.Splash) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
@@ -56,7 +62,9 @@ fun AppNavHost() {
                     currentDestination = backStack?.destination,
                     onNavigate = { r ->
                         nav.navigate(r) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                            popUpTo(nav.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -66,7 +74,7 @@ fun AppNavHost() {
         }
     ) { inner ->
         Box(Modifier.padding(inner).fillMaxSize()) {
-            NavHost(navController = nav, startDestination = Routes.Splash) {
+            NavHost(navController = nav, startDestination = startDestination) {
                 composable(Routes.Splash) {
                     SplashScreen {
                         nav.navigate(Routes.Home) {
@@ -75,7 +83,7 @@ fun AppNavHost() {
                     }
                 }
                 composable(Routes.Home) { HomeScreen() }
-                composable(Routes.Search) { SearchScreen() }
+                composable(Routes.Search) { SearchScreen() }   // <- change to SearchingScreen() if that’s your function
                 composable(Routes.Profile) { ProfileScreen() }
             }
         }
@@ -87,20 +95,29 @@ private fun BottomNav(
     currentDestination: NavDestination?,
     onNavigate: (String) -> Unit
 ) {
+    data class Item(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
+
     val items = listOf(
-        Triple(Routes.Home, "Home", Icons.Outlined.Home),
-        Triple(Routes.Search, "Search", Icons.Outlined.Search),
-        Triple(Routes.Profile, "Profile", Icons.Outlined.Person)
+        Item(Routes.Home, "Home", Icons.Outlined.Home),
+        Item(Routes.Search, "Search", Icons.Outlined.Search),
+        Item(Routes.Profile, "Profile", Icons.Outlined.Person)
     )
+
     NavigationBar {
-        items.forEach { (route, label, icon) ->
-            val selected = currentDestination?.hierarchy?.any { it.route == route } == true
+        items.forEach { item ->
+            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
             NavigationBarItem(
                 selected = selected,
-                onClick = { onNavigate(route) },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
+                onClick = { onNavigate(item.route) },
+                icon = { Icon(item.icon, contentDescription = item.label) },
+                label = { Text(item.label) }
             )
         }
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true, name = "App (Home)")
+@Composable
+fun AppNavHostPreview() {
+    MyAndroidAppTheme { AppNavHost(startDestination = Routes.Home) }
 }
