@@ -31,7 +31,7 @@ fun SearchScreen() {
         Spacer(Modifier.height(24.dp))
 
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(if (query.isBlank()) "Search page" else "Searching for \"$query\"")
+            Text(if (query.isBlank()) "" else "Searching for \"$query\"")
         }
     }
 }
