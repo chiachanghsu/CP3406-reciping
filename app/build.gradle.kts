@@ -35,6 +35,7 @@ android {
 
     buildFeatures { compose = true }
     composeOptions {
+        // NOTE: If you see a Kotlin/Compose mismatch, ensure root build.gradle.kts uses Kotlin 1.9.23
         kotlinCompilerExtensionVersion = "1.5.12"
     }
 
@@ -46,7 +47,7 @@ android {
 }
 
 dependencies {
-    // Compose BOM (manages versions automatically)
+    // ----- Compose BOM (keeps Compose libs in sync; don't put versions on Compose artifacts)
     val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
     implementation(composeBom)
     androidTestImplementation(composeBom)
@@ -55,14 +56,16 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material3:material3:1.3.0")
+    implementation("androidx.compose.material3:material3")          // ✅ keep only this (no version)
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // XML Material Components (only needed if you reference XML themes/widgets; OK to keep)
     implementation("com.google.android.material:material:1.12.0")
 
-
-
-    // Navigation + Lifecycle
+    // ✅ Correct Navigation for Compose
     implementation("androidx.navigation:navigation-compose:2.8.2")
+
+    // Lifecycle (Compose ViewModel)
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
 
     // Room
@@ -74,7 +77,7 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // Tests
+    // Tests / tooling
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
