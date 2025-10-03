@@ -8,13 +8,13 @@
         android:fullBackupContent="@xml/backup_rules"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MyAndroidApp"
+        android:theme="@style/Theme.Reciping"
         tools:targetApi="31">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.MyAndroidApp">
+            android:theme="@style/Theme.Reciping">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
