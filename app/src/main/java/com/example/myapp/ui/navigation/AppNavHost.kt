@@ -46,7 +46,7 @@ fun AppNavHost(startDestination: String = Routes.Splash) {
                     title = {
                         Text(
                             when (route) {
-                                Routes.Home -> "reciping"
+                                Routes.Home -> "Reciping"
                                 Routes.Search -> "Search"
                                 Routes.Profile -> "Profile"
                                 else -> ""
