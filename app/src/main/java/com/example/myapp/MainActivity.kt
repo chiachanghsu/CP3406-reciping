@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyAndroidAppTheme {
-                AppNavHost()   // all com.example.myapp.ui.navigation & screens live outside MainActivity
+                AppNavHost()
             }
         }
     }

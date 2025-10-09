@@ -26,7 +26,7 @@ fun ProfileScreen() {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(R.drawable.profile), // drawable/profile.(png|jpg|webp)
+            painter = painterResource(R.drawable.profile),
             contentDescription = "Profile photo",
             modifier = Modifier
                 .size(140.dp)

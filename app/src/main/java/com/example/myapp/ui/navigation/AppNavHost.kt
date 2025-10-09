@@ -28,7 +28,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapp.ui.screens.HomeScreen
 import com.example.myapp.ui.screens.ProfileScreen
-import com.example.myapp.ui.screens.SearchScreen   // If your file is SearchingScreen.kt, change call below to SearchingScreen()
+import com.example.myapp.ui.screens.SearchScreen
 import com.example.myapp.ui.screens.SplashScreen
 import com.example.myapp.ui.theme.MyAndroidAppTheme
 
@@ -83,7 +83,7 @@ fun AppNavHost(startDestination: String = Routes.Splash) {
                     }
                 }
                 composable(Routes.Home) { HomeScreen() }
-                composable(Routes.Search) { SearchScreen() }   // <- change to SearchingScreen() if that’s your function
+                composable(Routes.Search) { SearchScreen() }
                 composable(Routes.Profile) { ProfileScreen() }
             }
         }

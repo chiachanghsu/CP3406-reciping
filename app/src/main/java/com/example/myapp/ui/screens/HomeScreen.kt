@@ -1,4 +1,3 @@
-// HomeScreen.kt
 package com.example.myapp.ui.screens
 
 import androidx.compose.foundation.Image
@@ -17,13 +16,12 @@ fun HomeScreen() {
     Column(Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(R.drawable.food_1),
-            contentDescription = null,                 // decorative
+            contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp),
             contentScale = ContentScale.Crop
         )
-        // …other content
     }
 }
 
