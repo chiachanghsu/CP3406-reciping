@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.flowOf
 
 class SearchViewModel(app: Application) : AndroidViewModel(app) {
     private val dao = AppDatabase.get(app).recipeDao()
@@ -24,7 +25,7 @@ class SearchViewModel(app: Application) : AndroidViewModel(app) {
 
     val results: StateFlow<List<Recipe>> =
         likeQuery.flatMapLatest { q ->
-            if (q == null) dao.getAll()
+            if (q == null) flowOf(emptyList())
             else dao.search(q)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 }

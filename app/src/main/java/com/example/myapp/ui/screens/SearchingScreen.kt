@@ -8,7 +8,9 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
@@ -19,7 +21,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapp.data.model.Recipe
 import com.example.myapp.ui.theme.MyAndroidAppTheme
 import com.example.myapp.ui.viewmodel.SearchViewModel
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions   // <-- correct import
 
 @Composable
 fun SearchScreen() {
@@ -51,37 +53,39 @@ private fun SearchContent(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
         )
         Spacer(Modifier.height(12.dp))
-        LazyColumn(Modifier.fillMaxSize()) {
-            if (results.isEmpty()) {
-                item {
-                    Text("No results", modifier = Modifier.padding(8.dp))
-                }
-            } else {
-                items(results) { r ->
-                    ListItem(
-                        headlineContent = { Text(r.name) },
-                        supportingContent = {
-                            Text("~${r.timeMinutes} min • ${r.ingredients.lines().firstOrNull()?.trim() ?: ""}…")
-                        }
-                    )
-                    Divider()
+
+        // Only show results when the query isn't blank
+        if (query.trim().isNotEmpty()) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                if (results.isEmpty()) {
+                    item { Text("No results", modifier = Modifier.padding(8.dp)) }
+                } else {
+                    items(results) { r ->
+                        ListItem(
+                            headlineContent = { Text(r.name) },
+                            supportingContent = {
+                                Text("~${r.timeMinutes} min • ${r.ingredients.lines().firstOrNull()?.trim() ?: ""}…")
+                            }
+                        )
+                        Divider()
+                    }
                 }
             }
+        } else {
+            // Keep the page visually empty; remove this Text if you want absolutely nothing.
+            // Text("", Modifier.height(0.dp))
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true, name = "Search (Preview)")
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun SearchPreview() {
     MyAndroidAppTheme {
         SearchContent(
-            query = "pan",
+            query = "",
             onQueryChange = {},
-            results = listOf(
-                Recipe(name = "Fluffy Pancakes", ingredients = "Flour\nMilk\nEgg…", timeMinutes = 25),
-                Recipe(name = "Pan-seared Salmon", ingredients = "Salmon\nButter\nGarlic…", timeMinutes = 18)
-            )
+            results = emptyList() // empty preview
         )
     }
 }
