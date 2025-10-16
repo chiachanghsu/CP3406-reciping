@@ -4,15 +4,15 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.myapp.data.model.Word
+import com.example.myapp.data.model.Recipe
 
 @Database(
-    entities = [Word::class],
-    version = 2,
+    entities = [Recipe::class],  // add Recipe
+    version = 3,                               // bump version
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun wordDao(): WordDao
+    abstract fun recipeDao(): RecipeDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
@@ -24,7 +24,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "reciping.db"
                 )
-                    .fallbackToDestructiveMigration() // resets if version changes later
+                    .fallbackToDestructiveMigration()   // drop/recreate on version change
                     .build().also { INSTANCE = it }
             }
     }

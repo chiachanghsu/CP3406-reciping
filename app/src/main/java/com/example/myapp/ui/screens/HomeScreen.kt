@@ -20,15 +20,21 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapp.R
+import com.example.myapp.data.model.Recipe
 import com.example.myapp.ui.theme.MyAndroidAppTheme
-import com.example.myapp.ui.viewmodel.WordViewModel
+import com.example.myapp.ui.viewmodel.RecipeViewModel
 
 @Composable
 fun HomeScreen() {
     val app = LocalContext.current.applicationContext as Application
-    val vm: WordViewModel = viewModel(factory = object : ViewModelProvider.AndroidViewModelFactory(app) {})
-    val words by vm.words.collectAsState()
+    val vm: RecipeViewModel = viewModel(factory = object : ViewModelProvider.AndroidViewModelFactory(app) {})
+    val recipes by vm.recipes.collectAsState()
 
+    HomeContent(recipes = recipes)
+}
+
+@Composable
+private fun HomeContent(recipes: List<Recipe>) {
     Column(Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(R.drawable.food_1),
@@ -39,41 +45,29 @@ fun HomeScreen() {
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            item {
-                Text("Saved words", modifier = Modifier.padding(bottom = 8.dp))
-                Divider()
-            }
-            items(words) { w ->
-                ListItem(headlineContent = { Text(w.text) })
+            items(recipes) { r ->
+                ListItem(
+                    headlineContent = { Text(r.name) },
+                    supportingContent = {
+                        Text("~${r.timeMinutes} min • ${r.ingredients.lines().firstOrNull()?.trim() ?: ""}…")
+                    }
+                )
                 Divider()
             }
         }
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true, name = "Home")
+@Preview(showBackground = true, showSystemUi = true, name = "Home (Recipes)")
 @Composable
 fun HomeScreenPreview() {
     MyAndroidAppTheme {
-        Column(Modifier.fillMaxSize()) {
-            Image(
-                painter = painterResource(R.drawable.food_1),
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(220.dp),
-                contentScale = ContentScale.Crop
+        HomeContent(
+            recipes = listOf(
+                Recipe(name = "Garlic Butter Shrimp Pasta", ingredients = "Spaghetti\nShrimp\nGarlic…", timeMinutes = 20),
+                Recipe(name = "Veggie Fried Rice", ingredients = "Rice\nEggs\nCarrot…", timeMinutes = 15),
+                Recipe(name = "Fluffy Pancakes", ingredients = "Flour\nMilk\nEgg…", timeMinutes = 25)
             )
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp)
-            ) {
-                item {
-                    Text("Saved words", modifier = Modifier.padding(bottom = 8.dp))
-                    Divider()
-                }
-                items(listOf("Apple", "Banana", "Carrot")) { t ->
-                    ListItem(headlineContent = { Text(t) })
-                    Divider()
-                }
-            }
-        }
+        )
     }
 }
