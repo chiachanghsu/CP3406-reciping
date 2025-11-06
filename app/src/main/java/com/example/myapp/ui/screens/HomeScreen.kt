@@ -1,93 +1,183 @@
+@file:OptIn(androidx.compose.material.ExperimentalMaterialApi::class)
+
 package com.example.myapp.ui.screens
 
-import android.app.Application
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ListItem
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.example.myapp.data.remote.MealsApi
 import com.example.myapp.data.remote.Meal
 import com.example.myapp.ui.theme.MyAndroidAppTheme
-import com.example.myapp.ui.viewmodel.HomeNetViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen() {
-    val app = LocalContext.current.applicationContext as Application
-    val vm: HomeNetViewModel =
-        viewModel(factory = object : ViewModelProvider.AndroidViewModelFactory(app) {})
+    val scope = rememberCoroutineScope()
+    val listState = rememberLazyListState()
 
-    val meals by vm.meals.collectAsState()
-    val loading by vm.loading.collectAsState()
-    val error by vm.error.collectAsState()
+    // Data & UI state
+    val meals = remember { mutableStateListOf<Meal>() }
+    var refreshing by remember { mutableStateOf(false) }
+    var loadingMore by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
 
-    Box(Modifier.fillMaxSize()) {
-        when {
-            loading -> {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
+    // Fetch a batch of random meals
+    fun loadBatch(count: Int = 6, replace: Boolean = false) {
+        if (loadingMore) return
+        loadingMore = true
+        error = null
+        scope.launch {
+            try {
+                val newOnes = buildList {
+                    repeat(count) {
+                        val r = MealsApi.service.randomMeal()
+                        r.meals?.firstOrNull()?.let { add(it) }
+                    }
+                }
+                if (replace) {
+                    meals.clear()
+                }
+                meals.addAll(newOnes)
+            } catch (t: Throwable) {
+                error = t.message ?: "Failed to load recipes"
+            } finally {
+                loadingMore = false
+                refreshing = false
             }
-            error != null -> {
-                Text("Error: $error", Modifier.align(Alignment.Center))
+        }
+    }
+
+    // Initial load
+    LaunchedEffect(Unit) { loadBatch() }
+
+    // Pull to refresh
+    val pullState = rememberPullRefreshState(
+        refreshing = refreshing,
+        onRefresh = {
+            refreshing = true
+            loadBatch(count = 6, replace = true)
+        }
+    )
+
+    // Infinite scroll trigger (near the end)
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val last = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            val total = listState.layoutInfo.totalItemsCount
+            total > 0 && last >= total - 3 && !refreshing && !loadingMore
+        }
+    }
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore) loadBatch(count = 4)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pullRefresh(pullState)
+    ) {
+        // Content
+        when {
+            error != null && meals.isEmpty() -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = error ?: "Error", style = MaterialTheme.typography.bodyLarge)
+                }
             }
             meals.isEmpty() -> {
-                Text("No recipes found.", Modifier.align(Alignment.Center))
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Loading recipes…", style = MaterialTheme.typography.bodyLarge)
+                }
             }
             else -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    state = listState,
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(meals) { m -> MealRow(m) }
+                    items(meals) { m ->
+                        MealCard(m)
+                    }
+                    // Optional tiny footer spacing
+                    item { Spacer(Modifier.height(24.dp)) }
+                }
+            }
+        }
+
+        // Pull-to-refresh indicator
+        PullRefreshIndicator(
+            refreshing = refreshing,
+            state = pullState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
+    }
+}
+
+@Composable
+private fun MealCard(m: Meal) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(Modifier.fillMaxWidth()) {
+            AsyncImage(
+                model = m.strMealThumb,
+                contentDescription = m.strMeal,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+            )
+            Column(Modifier.padding(12.dp)) {
+                Text(
+                    text = m.strMeal,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                val meta = listOfNotNull(m.strArea, m.strCategory).joinToString(" • ")
+                if (meta.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = meta,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
         }
     }
 }
 
+@Preview(showBackground = true, showSystemUi = true)
 @Composable
-private fun MealRow(m: Meal) {
-    ListItem(
-        leadingContent = {
-            if (!m.strMealThumb.isNullOrBlank()) {
-                AsyncImage(
-                    model = m.strMealThumb,
-                    contentDescription = null,
-                    modifier = Modifier.size(56.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
-        },
-        headlineContent = { Text(m.strMeal) },
-        supportingContent = {
-            val meta = listOfNotNull(m.strCategory, m.strArea).joinToString(" • ")
-            if (meta.isNotBlank()) Text(meta)
-        }
+fun HomePreview() {
+    // Preview with fake data
+    val fake = Meal(
+        id = "1234",
+        strMeal = "Preview Pasta",
+        strMealThumb = "https://www.themealdb.com/images/media/meals/ustsqw1468250014.jpg",
+        strArea = "Italian",
+        strCategory = "Pasta"
     )
-    Divider()
-}
-
-@Preview(showBackground = true, showSystemUi = true, name = "Home (loading)")
-@Composable
-fun HomeScreenPreview() {
     MyAndroidAppTheme {
-        // Preview won’t hit the network; leave empty.
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            MealCard(fake)
+            Spacer(Modifier.height(12.dp))
+            MealCard(fake.copy(strMeal = "Another Dish"))
         }
     }
 }
