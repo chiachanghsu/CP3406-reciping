@@ -7,8 +7,8 @@ import androidx.room.RoomDatabase
 import com.example.myapp.data.model.Recipe
 
 @Database(
-    entities = [Recipe::class],  // add Recipe
-    version = 3,                               // bump version
+    entities = [Recipe::class],
+    version = 2,                 // <— bump if your previous was 1
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -19,13 +19,15 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun get(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
+                Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
                     "reciping.db"
                 )
-                    .fallbackToDestructiveMigration()   // drop/recreate on version change
-                    .build().also { INSTANCE = it }
+                    // DEV ONLY: wipes DB automatically when schema changes
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { INSTANCE = it }
             }
     }
 }

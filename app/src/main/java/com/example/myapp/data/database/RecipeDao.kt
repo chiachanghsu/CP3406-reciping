@@ -9,17 +9,22 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipeDao {
-    @Query("SELECT * FROM recipes ORDER BY updatedAt DESC")
+
+    // Keep the name your ViewModel expects:
+    @Query("SELECT * FROM recipes ORDER BY id DESC")
     fun getAll(): Flow<List<Recipe>>
 
-    // NEW: search by name or ingredients (case-insensitive for ASCII)
     @Query("""
         SELECT * FROM recipes
-        WHERE name LIKE :q OR ingredients LIKE :q
-        ORDER BY updatedAt DESC
+        WHERE name LIKE '%' || :q || '%' 
+           OR ingredients LIKE '%' || :q || '%'
+        ORDER BY id DESC
     """)
     fun search(q: String): Flow<List<Recipe>>
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(item: Recipe)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<Recipe>)
 }

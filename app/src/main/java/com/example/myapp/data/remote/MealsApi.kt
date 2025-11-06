@@ -8,7 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// ==== Models (TheMealDB) ====
+// ---- API models (TheMealDB) ----
 data class MealResponse(
     @SerializedName("meals") val meals: List<Meal>?
 )
@@ -21,18 +21,16 @@ data class Meal(
     @SerializedName("strCategory") val strCategory: String?
 )
 
-// ==== Retrofit service ====
+// ---- Retrofit service ----
 interface MealsService {
-    // Search meals by text, e.g. s=chicken
     @GET("search.php")
     suspend fun searchMeals(@Query("s") query: String): MealResponse
 
-    // One random meal (unused but handy)
     @GET("random.php")
     suspend fun randomMeal(): MealResponse
 }
 
-// ==== Singleton API client ====
+// ---- Retrofit singleton ----
 object MealsApi {
     private val client by lazy {
         val log = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
@@ -44,7 +42,7 @@ object MealsApi {
     val service: MealsService by lazy {
         Retrofit.Builder()
             .baseUrl("https://www.themealdb.com/api/json/v1/1/")
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create())  // Gson converter
             .client(client)
             .build()
             .create(MealsService::class.java)
