@@ -45,8 +45,9 @@ android {
 }
 
 dependencies {
-    val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
+    val composeBom = platform("androidx.compose:compose-bom:2024.10.01") // or newer
     implementation(composeBom)
+    implementation("androidx.compose.material3:material3")
     androidTestImplementation(composeBom)
 
     implementation("androidx.activity:activity-compose:1.9.2")
@@ -60,6 +61,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.35.2-beta")
 
     // Room (KSP)
     val room = "2.6.1"

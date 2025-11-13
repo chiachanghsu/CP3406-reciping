@@ -3,13 +3,9 @@
 package com.example.myapp.ui.navigation
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -18,7 +14,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,9 +27,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.myapp.ui.screens.HomeScreen
 import com.example.myapp.ui.screens.ProfileScreen
+import com.example.myapp.ui.screens.RecipeDetailScreen
 import com.example.myapp.ui.screens.SearchScreen
 import com.example.myapp.ui.screens.SplashScreen
-import com.example.myapp.ui.theme.MyAndroidAppTheme
 
 @Composable
 fun AppNavHost(startDestination: String = Routes.Splash) {
@@ -62,9 +61,7 @@ fun AppNavHost(startDestination: String = Routes.Splash) {
                     currentDestination = backStack?.destination,
                     onNavigate = { r ->
                         nav.navigate(r) {
-                            popUpTo(nav.graph.findStartDestination().id) {
-                                saveState = true
-                            }
+                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                             launchSingleTop = true
                             restoreState = true
                         }
@@ -73,7 +70,7 @@ fun AppNavHost(startDestination: String = Routes.Splash) {
             }
         }
     ) { inner ->
-        Box(Modifier.padding(inner).fillMaxSize()) {
+        Box(Modifier.padding(inner)) {
             NavHost(navController = nav, startDestination = startDestination) {
                 composable(Routes.Splash) {
                     SplashScreen {
@@ -82,9 +79,17 @@ fun AppNavHost(startDestination: String = Routes.Splash) {
                         }
                     }
                 }
-                composable(Routes.Home) { HomeScreen() }
+                composable(Routes.Home) {
+                    HomeScreen(onMealClick = { id -> nav.navigate("detail/$id") })
+                }
                 composable(Routes.Search) { SearchScreen() }
                 composable(Routes.Profile) { ProfileScreen() }
+
+                // detail/{id}
+                composable(Routes.Detail) { entry ->
+                    val id = entry.arguments?.getString("id") ?: return@composable
+                    RecipeDetailScreen(mealId = id)
+                }
             }
         }
     }
@@ -95,14 +100,15 @@ private fun BottomNav(
     currentDestination: NavDestination?,
     onNavigate: (String) -> Unit
 ) {
-    data class Item(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
-
+    data class Item(
+        val route: String, val label: String,
+        val icon: androidx.compose.ui.graphics.vector.ImageVector
+    )
     val items = listOf(
         Item(Routes.Home, "Home", Icons.Outlined.Home),
         Item(Routes.Search, "Search", Icons.Outlined.Search),
         Item(Routes.Profile, "Profile", Icons.Outlined.Person)
     )
-
     NavigationBar {
         items.forEach { item ->
             val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
@@ -114,10 +120,4 @@ private fun BottomNav(
             )
         }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true, name = "App (Home)")
-@Composable
-fun AppNavHostPreview() {
-    MyAndroidAppTheme { AppNavHost(startDestination = Routes.Home) }
 }
