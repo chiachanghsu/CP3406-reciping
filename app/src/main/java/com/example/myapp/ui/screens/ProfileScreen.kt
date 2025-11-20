@@ -1,51 +1,40 @@
 package com.example.myapp.ui.screens
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.example.myapp.R
-import com.example.myapp.ui.theme.MyAndroidAppTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.myapp.ui.viewmodel.DetailViewModel
+import com.example.myapp.ui.viewmodel.ProfileViewModel
+import kotlinx.coroutines.flow.collectLatest
 
 @Composable
-fun ProfileScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Image(
-            painter = painterResource(R.drawable.profile),
-            contentDescription = "Profile photo",
-            modifier = Modifier
-                .size(140.dp)
-                .clip(CircleShape)
-                .border(3.dp, MaterialTheme.colorScheme.primary, CircleShape),
-            contentScale = ContentScale.Crop
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "Hsu Chia Chang",
-            style = MaterialTheme.typography.titleMedium
-        )
+fun ProfileScreen(
+    onMealClick: (String) -> Unit,
+    vm: ProfileViewModel = viewModel()
+) {
+    val saved by vm.saved.collectAsState(initial = emptyList())
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(12.dp)) {
+        items(saved, key = { it.id }) { s ->
+            ListItem(
+                leadingContent = { AsyncImage(model = s.thumb, contentDescription = s.name, modifier = Modifier.size(48.dp)) },
+                headlineContent = { Text(s.name) },
+                supportingContent = {
+                    val meta = listOfNotNull(s.category, s.area).joinToString(" · ")
+                    if (meta.isNotBlank()) Text(meta)
+                },
+                modifier = Modifier.clickable { onMealClick(s.id) }
+            )
+            Divider()
+        }
     }
-}
-
-@Preview(showBackground = true, showSystemUi = true, name = "Profile")
-@Composable
-fun ProfileScreenPreview() {
-    MyAndroidAppTheme { ProfileScreen() }
 }

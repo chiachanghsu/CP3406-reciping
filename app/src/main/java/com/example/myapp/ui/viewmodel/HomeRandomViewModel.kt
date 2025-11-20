@@ -2,37 +2,46 @@ package com.example.myapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.myapp.data.remote.Meal
-import com.example.myapp.data.remote.MealsApi
+import com.example.myapp.data.Repository
+import com.example.myapp.data.remote.MealSummary
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class HomeRandomViewModel : ViewModel() {
-    private val _meals = MutableStateFlow<List<Meal>>(emptyList())
-    val meals: StateFlow<List<Meal>> = _meals
+class HomeRandomViewModel(
+    private val repo: Repository = Repository()
+) : ViewModel() {
 
-    private var loading = false
+    private val _meals = MutableStateFlow<List<MealSummary>>(emptyList())
+    val meals: StateFlow<List<MealSummary>> = _meals
 
-    fun loadMoreRandom(count: Int = 10) {
-        if (loading) return
-        loading = true
-        viewModelScope.launch {
+    private val _loading = MutableStateFlow(false)
+    val loading: StateFlow<Boolean> = _loading
+
+    /** Load one more random card */
+    fun loadMoreOne() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _loading.value = true
             try {
-                val newOnes = buildList {
-                    repeat(count) {
-                        MealsApi.service.randomMeal().meals?.firstOrNull()?.let { add(it) }
-                    }
+                repo.randomOne()?.let { rnd ->
+                    _meals.value = _meals.value + rnd
                 }
-                _meals.value = _meals.value + newOnes
             } finally {
-                loading = false
+                _loading.value = false
             }
         }
     }
 
+    /** Initial fill (e.g., 6 cards) */
+    fun ensureInitial(count: Int = 6) {
+        if (_meals.value.isNotEmpty()) return
+        repeat(count) { loadMoreOne() }
+    }
+
+    /** Pull-to-refresh: clear and refill */
     fun refresh() {
         _meals.value = emptyList()
-        loadMoreRandom()
+        ensureInitial()
     }
 }

@@ -1,30 +1,23 @@
 package com.example.myapp.data.database
 
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import com.example.myapp.data.model.Recipe
+import androidx.room.*
+import com.example.myapp.data.model.SavedRecipe
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecipeDao {
+    @Query("SELECT * FROM saved_recipes ORDER BY name")
+    fun allSaved(): Flow<List<SavedRecipe>>
 
-    // Keep the name your ViewModel expects:
-    @Query("SELECT * FROM recipes ORDER BY id DESC")
-    fun getAll(): Flow<List<Recipe>>
-
-    @Query("""
-        SELECT * FROM recipes
-        WHERE name LIKE '%' || :q || '%' 
-           OR ingredients LIKE '%' || :q || '%'
-        ORDER BY id DESC
-    """)
-    fun search(q: String): Flow<List<Recipe>>
+    @Query("SELECT * FROM saved_recipes WHERE id = :id LIMIT 1")
+    fun byId(id: String): Flow<SavedRecipe?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(item: Recipe)
+    suspend fun upsert(r: SavedRecipe)
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAll(items: List<Recipe>)
+    @Query("UPDATE saved_recipes SET notes = :notes WHERE id = :id")
+    suspend fun updateNotes(id: String, notes: String)
+
+    @Query("DELETE FROM saved_recipes WHERE id = :id")
+    suspend fun delete(id: String)
 }

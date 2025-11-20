@@ -1,40 +1,63 @@
 package com.example.myapp.data.remote
 
 import com.google.gson.annotations.SerializedName
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
 
-// ---------- Lightweight list/search model ----------
-data class MealResponse(
-    @SerializedName("meals") val meals: List<Meal>?
+// -------- Retrofit service --------
+interface MealsApiService {
+    // search by name, e.g. "Arrabiata"
+    @GET("search.php")
+    suspend fun searchByName(@Query("s") name: String): SearchResponse
+
+    // details by id, e.g. "52772"
+    @GET("lookup.php")
+    suspend fun detail(@Query("i") id: String): DetailResponse
+
+    // one random recipe
+    @GET("random.php")
+    suspend fun random(): DetailResponse
+}
+
+object MealsApi {
+    val service: MealsApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://www.themealdb.com/api/json/v1/1/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(MealsApiService::class.java)
+    }
+}
+
+// -------- DTOs --------
+data class SearchResponse(
+    val meals: List<MealSummary>?
 )
 
-data class Meal(
+data class DetailResponse(
+    val meals: List<MealDetail>?
+)
+
+/** Lightweight item used in lists / search results */
+data class MealSummary(
     @SerializedName("idMeal") val id: String,
-    @SerializedName("strMeal") val strMeal: String,
-    @SerializedName("strMealThumb") val strMealThumb: String?,
-    @SerializedName("strArea") val strArea: String?,
-    @SerializedName("strCategory") val strCategory: String?
+    @SerializedName("strMeal") val name: String,
+    @SerializedName("strMealThumb") val thumb: String,
+    @SerializedName("strCategory") val category: String?,
+    @SerializedName("strArea") val area: String?
 )
 
-// ---------- Full detail model (has ingredients, measures, instructions) ----------
-data class MealDetailResponse(
-    @SerializedName("meals") val meals: List<MealDetail>?
-)
-
+/** Full detail payload (includes up to 20 ingredients + measures) */
 data class MealDetail(
-    @SerializedName("idMeal") val idMeal: String,
-    @SerializedName("strMeal") val strMeal: String,
-    @SerializedName("strMealThumb") val strMealThumb: String?,
-    @SerializedName("strArea") val strArea: String?,
-    @SerializedName("strCategory") val strCategory: String?,
-    @SerializedName("strInstructions") val strInstructions: String?,
+    @SerializedName("idMeal") val id: String,
+    @SerializedName("strMeal") val name: String,
+    @SerializedName("strMealThumb") val thumb: String,
+    @SerializedName("strCategory") val category: String?,
+    @SerializedName("strArea") val area: String?,
+    @SerializedName("strInstructions") val instructions: String?,
 
-    // ingredients 1..20
     @SerializedName("strIngredient1")  val strIngredient1: String?,  @SerializedName("strMeasure1")  val strMeasure1: String?,
     @SerializedName("strIngredient2")  val strIngredient2: String?,  @SerializedName("strMeasure2")  val strMeasure2: String?,
     @SerializedName("strIngredient3")  val strIngredient3: String?,  @SerializedName("strMeasure3")  val strMeasure3: String?,
@@ -54,29 +77,25 @@ data class MealDetail(
     @SerializedName("strIngredient17") val strIngredient17: String?, @SerializedName("strMeasure17") val strMeasure17: String?,
     @SerializedName("strIngredient18") val strIngredient18: String?, @SerializedName("strMeasure18") val strMeasure18: String?,
     @SerializedName("strIngredient19") val strIngredient19: String?, @SerializedName("strMeasure19") val strMeasure19: String?,
-    @SerializedName("strIngredient20") val strIngredient20: String?, @SerializedName("strMeasure20") val strMeasure20: String?
+    @SerializedName("strIngredient20") val strIngredient20: String?, @SerializedName("strMeasure20") val strMeasure20: String?,
 )
 
-// ---------- Retrofit ----------
-interface MealsService {
-    @GET("search.php")  suspend fun searchMeals(@Query("s") query: String): MealResponse
-    @GET("random.php")  suspend fun randomMeal(): MealResponse
-    @GET("lookup.php")  suspend fun lookupMeal(@Query("i") id: String): MealDetailResponse
-}
-
-object MealsApi {
-    private val client by lazy {
-        OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
-            .build()
-    }
-
-    val service: MealsService by lazy {
-        Retrofit.Builder()
-            .baseUrl("https://www.themealdb.com/api/json/v1/1/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(client)
-            .build()
-            .create(MealsService::class.java)
+/** Convenience: collect non-blank ingredient + measure pairs */
+fun MealDetail.ingredients(): List<Pair<String, String>> {
+    val pairs = listOf(
+        strIngredient1  to strMeasure1,  strIngredient2  to strMeasure2,
+        strIngredient3  to strMeasure3,  strIngredient4  to strMeasure4,
+        strIngredient5  to strMeasure5,  strIngredient6  to strMeasure6,
+        strIngredient7  to strMeasure7,  strIngredient8  to strMeasure8,
+        strIngredient9  to strMeasure9,  strIngredient10 to strMeasure10,
+        strIngredient11 to strMeasure11, strIngredient12 to strMeasure12,
+        strIngredient13 to strMeasure13, strIngredient14 to strMeasure14,
+        strIngredient15 to strMeasure15, strIngredient16 to strMeasure16,
+        strIngredient17 to strMeasure17, strIngredient18 to strMeasure18,
+        strIngredient19 to strMeasure19, strIngredient20 to strMeasure20,
+    )
+    return pairs.mapNotNull { (ing, mea) ->
+        val i = ing?.trim().orEmpty()
+        if (i.isBlank()) null else i to (mea?.trim().orEmpty())
     }
 }

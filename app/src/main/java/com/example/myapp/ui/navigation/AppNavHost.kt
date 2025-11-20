@@ -3,121 +3,77 @@
 package com.example.myapp.ui.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import com.example.myapp.ui.screens.HomeScreen
-import com.example.myapp.ui.screens.ProfileScreen
-import com.example.myapp.ui.screens.RecipeDetailScreen
-import com.example.myapp.ui.screens.SearchScreen
-import com.example.myapp.ui.screens.SplashScreen
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
+import androidx.navigation.compose.*
+import androidx.navigation.navArgument
+import com.example.myapp.ui.screens.*
 
 @Composable
-fun AppNavHost(startDestination: String = Routes.Splash) {
+fun AppNavHost() {
     val nav = rememberNavController()
-    val backStack by nav.currentBackStackEntryAsState()
-    val route = backStack?.destination?.route
+    val back by nav.currentBackStackEntryAsState()
+    val route = back?.destination?.route
     val showBars = route in listOf(Routes.Home, Routes.Search, Routes.Profile)
 
     Scaffold(
         topBar = {
-            if (showBars) {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            when (route) {
-                                Routes.Home -> "Reciping"
-                                Routes.Search -> "Search"
-                                Routes.Profile -> "Profile"
-                                else -> ""
-                            }
-                        )
+            if (showBars) CenterAlignedTopAppBar(title = {
+                Text(
+                    when (route) {
+                        Routes.Home -> "Reciping"
+                        Routes.Search -> "Search"
+                        Routes.Profile -> "Profile"
+                        else -> ""
                     }
                 )
-            }
+            })
         },
         bottomBar = {
-            if (showBars) {
-                BottomNav(
-                    currentDestination = backStack?.destination,
-                    onNavigate = { r ->
-                        nav.navigate(r) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
+            if (showBars) NavigationBar {
+                listOf(
+                    Routes.Home to Icons.Outlined.Home,
+                    Routes.Search to Icons.Outlined.Search,
+                    Routes.Profile to Icons.Outlined.Person
+                ).forEach { (r, icon) ->
+                    val selected = route == r
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = { nav.navigate(r) { popUpTo(nav.graph.startDestinationId) { inclusive = false }; launchSingleTop = true } },
+                        icon = { Icon(icon, contentDescription = r) },
+                        label = { Text(r.replaceFirstChar { it.uppercase() }) }
+                    )
+                }
             }
         }
     ) { inner ->
-        Box(Modifier.padding(inner)) {
-            NavHost(navController = nav, startDestination = startDestination) {
-                composable(Routes.Splash) {
-                    SplashScreen {
-                        nav.navigate(Routes.Home) {
-                            popUpTo(Routes.Splash) { inclusive = true }
-                        }
-                    }
-                }
+        Box(Modifier.padding(inner).fillMaxSize()) {
+            NavHost(nav, startDestination = Routes.Home) {
                 composable(Routes.Home) {
                     HomeScreen(onMealClick = { id -> nav.navigate("detail/$id") })
                 }
-                composable(Routes.Search) { SearchScreen() }
-                composable(Routes.Profile) { ProfileScreen() }
-
-                // detail/{id}
-                composable(Routes.Detail) { entry ->
-                    val id = entry.arguments?.getString("id") ?: return@composable
+                composable(Routes.Search) {
+                    SearchScreen(onMealClick = { id -> nav.navigate("detail/$id") })
+                }
+                composable(Routes.Profile) {
+                    ProfileScreen(onMealClick = { id -> nav.navigate("detail/$id") })
+                }
+                composable(
+                    Routes.Detail,
+                    arguments = listOf(navArgument("id") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val id = backStackEntry.arguments?.getString("id")!!
                     RecipeDetailScreen(mealId = id)
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun BottomNav(
-    currentDestination: NavDestination?,
-    onNavigate: (String) -> Unit
-) {
-    data class Item(
-        val route: String, val label: String,
-        val icon: androidx.compose.ui.graphics.vector.ImageVector
-    )
-    val items = listOf(
-        Item(Routes.Home, "Home", Icons.Outlined.Home),
-        Item(Routes.Search, "Search", Icons.Outlined.Search),
-        Item(Routes.Profile, "Profile", Icons.Outlined.Person)
-    )
-    NavigationBar {
-        items.forEach { item ->
-            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onNavigate(item.route) },
-                icon = { Icon(item.icon, contentDescription = item.label) },
-                label = { Text(item.label) }
-            )
         }
     }
 }
