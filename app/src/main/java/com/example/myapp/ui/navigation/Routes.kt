@@ -1,7 +1,9 @@
 package com.example.myapp.ui.navigation
-object Routes {
-    const val Home = "home"
-    const val Search = "search"
-    const val Profile = "profile"
-    const val Detail = "detail/{id}"
+
+
+sealed class Routes(val route: String) {
+    data object Home : Routes("home")
+    data object Search : Routes("search")
+    data object Detail : Routes("detail/{mealId}") { const val ARG = "mealId" }
+    data object Profile : Routes("profile")
 }

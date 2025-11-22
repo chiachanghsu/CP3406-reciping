@@ -1,32 +1,149 @@
 package com.example.myapp.data
 
-import com.example.myapp.data.remote.MealsApi
-import com.example.myapp.data.remote.MealDetail
-import com.example.myapp.data.remote.MealSummary
-import com.example.myapp.data.remote.ingredients
+import android.content.Context
+import com.example.myapp.data.local.AppDatabase
+import com.example.myapp.data.local.SavedRecipe
+import com.example.myapp.data.model.Meal
+import com.example.myapp.data.model.MealDetail
+import com.example.myapp.data.remote.MealDbRaw
+import com.example.myapp.data.remote.RetrofitClient
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 
-class Repository {
-    private val api = MealsApi.service
+object Repository {
+    private lateinit var db: AppDatabase
+    private val mealApi = RetrofitClient.mealApi
 
-    suspend fun searchByName(q: String): List<MealSummary> {
-        if (q.isBlank()) return emptyList()
-        return api.searchByName(q).meals.orEmpty()
+    fun init(context: Context) {
+        db = AppDatabase.get(context)
+    }
+
+    // Convert MealDbRaw to Meal
+    private fun MealDbRaw.toMeal(): Meal {
+        val ingredients = mutableMapOf<String, String>()
+        val ingredientFields = listOf(
+            strIngredient1 to strMeasure1, strIngredient2 to strMeasure2,
+            strIngredient3 to strMeasure3, strIngredient4 to strMeasure4,
+            strIngredient5 to strMeasure5, strIngredient6 to strMeasure6,
+            strIngredient7 to strMeasure7, strIngredient8 to strMeasure8,
+            strIngredient9 to strMeasure9, strIngredient10 to strMeasure10,
+            strIngredient11 to strMeasure11, strIngredient12 to strMeasure12,
+            strIngredient13 to strMeasure13, strIngredient14 to strMeasure14,
+            strIngredient15 to strMeasure15, strIngredient16 to strMeasure16,
+            strIngredient17 to strMeasure17, strIngredient18 to strMeasure18,
+            strIngredient19 to strMeasure19, strIngredient20 to strMeasure20
+        )
+        ingredientFields.forEach { (ing, meas) ->
+            if (!ing.isNullOrBlank()) {
+                ingredients[ing] = meas ?: ""
+            }
+        }
+        
+        return Meal(
+            id = idMeal ?: "",
+            name = strMeal ?: "",
+            thumb = strMealThumb ?: "",
+            area = strArea,
+            category = strCategory,
+            instructions = strInstructions,
+            ingredients = ingredients
+        )
+    }
+
+    // Saved recipes
+    val saved: Flow<List<Meal>>
+        get() = db.savedDao().getAllSaved().map { list ->
+            list.map { 
+                Meal(
+                    id = it.id,
+                    name = it.name,
+                    thumb = it.thumb ?: "",
+                    area = it.area,
+                    category = null,
+                    instructions = null,
+                    ingredients = emptyMap()
+                )
+            }
+        }
+
+    suspend fun savedList(): List<Meal> {
+        val list = db.savedDao().getAllSaved().first()
+        return list.map { 
+            Meal(
+                id = it.id,
+                name = it.name,
+                thumb = it.thumb ?: "",
+                area = it.area,
+                category = null,
+                instructions = null,
+                ingredients = emptyMap()
+            )
+        }
+    }
+
+    fun isSaved(id: String): Flow<Boolean> = db.savedDao().isSaved(id)
+
+    suspend fun save(meal: Meal) {
+        db.savedDao().upsert(
+            SavedRecipe(meal.id, meal.name, meal.thumb, meal.area)
+        )
+    }
+
+    suspend fun remove(id: String) = db.savedDao().remove(id)
+
+    suspend fun toggleSave(meal: Meal) {
+        val isCurrentlySaved = db.savedDao().isSaved(meal.id).first()
+        if (isCurrentlySaved) {
+            remove(meal.id)
+        } else {
+            save(meal)
+        }
+    }
+
+    // Remote API calls
+    suspend fun random(): Meal? {
+        return try {
+            val response = mealApi.getRandom()
+            response.meals?.firstOrNull()?.toMeal()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    suspend fun search(query: String): List<Meal> {
+        return try {
+            val response = mealApi.search(query)
+            response.meals?.map { it.toMeal() } ?: emptyList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    suspend fun lookup(id: String): Meal? {
+        return try {
+            val response = mealApi.lookup(id)
+            response.meals?.firstOrNull()?.toMeal()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     suspend fun detail(id: String): MealDetail? {
-        return api.detail(id).meals?.firstOrNull()
-    }
-
-    suspend fun randomOne(): MealSummary? {
-        return api.random().meals?.firstOrNull()?.let { d ->
-            // convert detail to summary for lists
-            MealSummary(
-                id = d.id,
-                name = d.name,
-                thumb = d.thumb,
-                category = d.category,
-                area = d.area
+        return try {
+            val meal = lookup(id) ?: return null
+            MealDetail(
+                id = meal.id,
+                name = meal.name,
+                ingredients = meal.ingredients,
+                instructions = meal.instructions
             )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 }

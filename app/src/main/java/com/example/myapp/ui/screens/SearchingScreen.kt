@@ -1,69 +1,65 @@
 package com.example.myapp.ui.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberAsyncImagePainter
-import com.example.myapp.data.remote.MealSummary
-import com.example.myapp.ui.viewmodel.SearchingViewModel
+import coil.compose.AsyncImage
+import com.example.myapp.data.Repository
+import com.example.myapp.data.model.Meal
+import kotlinx.coroutines.launch
+
 
 @Composable
-fun SearchScreen(
-    onMealClick: (String) -> Unit,
-    vm: SearchingViewModel = viewModel()
-) {
-    val results by vm.results.collectAsState()
-    var tf by remember { mutableStateOf(TextFieldValue("")) }
+fun SearchingScreen(repo: Repository, onOpenDetail: (String) -> Unit) {
+    var query by remember { mutableStateOf("") }
+    var results by remember { mutableStateOf(listOf<Meal>()) }
+    var loading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-    Column(Modifier.fillMaxSize().padding(12.dp)) {
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
         OutlinedTextField(
-            value = tf,
-            onValueChange = {
-                tf = it
-                vm.setQuery(it.text)
-            },
+            value = query,
+            onValueChange = { query = it },
             modifier = Modifier.fillMaxWidth(),
-            label = { Text("Search recipe") },
+            label = { Text("Search by name") },
             singleLine = true
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
+        Button(onClick = {
+            scope.launch {
+                loading = true
+                results = repo.search(query)
+                loading = false
+            }
+        }) { Text("Search") }
 
-        LazyColumn {
-            items(results, key = { it.id }) { m ->
-                SearchRow(m) { onMealClick(m.id) }
-                Spacer(Modifier.height(8.dp))
+
+        Spacer(Modifier.height(12.dp))
+        if (loading) CircularProgressIndicator() else LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(results) { meal ->
+                MealRow(meal = meal, onClick = { onOpenDetail(meal.id) })
             }
         }
     }
 }
 
+
 @Composable
-private fun SearchRow(meal: MealSummary, onClick: () -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(8.dp)
-    ) {
-        Image(
-            painter = rememberAsyncImagePainter(meal.thumb),
-            contentDescription = meal.name,
-            modifier = Modifier.size(72.dp)
-        )
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(meal.name)
-            meal.area?.let { Text(it) }
-            meal.category?.let { Text(it) }
+private fun MealRow(meal: Meal, onClick: () -> Unit) {
+    Card(Modifier.fillMaxWidth().clickable { onClick() }) {
+        Row(Modifier.padding(12.dp)) {
+            AsyncImage(model = meal.thumb, contentDescription = meal.name, modifier = Modifier.size(64.dp))
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.fillMaxWidth()) {
+                Text(meal.name, style = MaterialTheme.typography.titleMedium)
+                Text((meal.area ?: "") + (if (!meal.category.isNullOrBlank()) " • ${meal.category}" else ""))
+            }
         }
     }
 }
