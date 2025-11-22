@@ -9,5 +9,6 @@ data class SavedRecipe(
     val name: String,
     val area: String? = null,
     val thumb: String? = null,
+    val notes: String = "",
     val savedAt: Long = System.currentTimeMillis()
 )

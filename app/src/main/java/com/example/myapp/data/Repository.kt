@@ -86,18 +86,29 @@ object Repository {
 
     suspend fun save(meal: Meal) {
         db.savedDao().upsert(
-            SavedRecipe(meal.id, meal.name, meal.thumb, meal.area)
+            SavedRecipe(meal.id, meal.name, meal.thumb, meal.area, notes = "")
         )
     }
 
     suspend fun remove(id: String) = db.savedDao().remove(id)
 
-    suspend fun toggleSave(meal: Meal) {
+    suspend fun updateNotes(id: String, notes: String) {
+        db.savedDao().updateNotes(id, notes)
+    }
+
+    suspend fun getSavedRecipeWithNotes(id: String): SavedRecipe? {
+        val allSaved = db.savedDao().getAllSaved().first()
+        return allSaved.find { it.id == id }
+    }
+
+    suspend fun toggleSave(meal: Meal): Boolean {
         val isCurrentlySaved = db.savedDao().isSaved(meal.id).first()
-        if (isCurrentlySaved) {
+        return if (isCurrentlySaved) {
             remove(meal.id)
+            false // Return false = unsaved
         } else {
             save(meal)
+            true // Return true = saved
         }
     }
 

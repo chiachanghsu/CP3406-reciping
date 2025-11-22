@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
  */
 @Database(
     entities = [Recipe::class, SavedRecipe::class],
-    version = 1,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,7 +27,8 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "app.db"
-                ).fallbackToDestructiveMigration()
+                )
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { INSTANCE = it }
             }

@@ -20,4 +20,7 @@ interface SavedDao {
 
     @Query("DELETE FROM saved_recipes WHERE id = :id")
     suspend fun remove(id: String)
+
+    @Query("UPDATE saved_recipes SET notes = :notes WHERE id = :id")
+    suspend fun updateNotes(id: String, notes: String)
 }
