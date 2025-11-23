@@ -25,7 +25,6 @@ fun SearchingScreen(repo: Repository, onOpenDetail: (String) -> Unit) {
     var sortOption by remember { mutableStateOf(SortOption.NAME) }
     val scope = rememberCoroutineScope()
 
-    // Sort results based on selected option
     val sortedResults = remember(results, sortOption) {
         when (sortOption) {
             SortOption.NAME -> results.sortedBy { it.name.lowercase() }

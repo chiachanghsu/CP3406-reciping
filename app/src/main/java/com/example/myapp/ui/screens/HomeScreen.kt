@@ -25,7 +25,6 @@ fun HomeScreen(repo: Repository, onOpenDetail: (String) -> Unit) {
     var isLoadingMore by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
 
-    // Load initial recipes
     LaunchedEffect(Unit) {
         scope.launch {
             loading = true
@@ -38,7 +37,6 @@ fun HomeScreen(repo: Repository, onOpenDetail: (String) -> Unit) {
         }
     }
 
-    // Auto-load more when scrolling near the end
     LaunchedEffect(listState) {
         snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
             .collect { lastVisibleIndex ->

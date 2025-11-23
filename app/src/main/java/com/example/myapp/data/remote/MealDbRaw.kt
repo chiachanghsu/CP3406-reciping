@@ -1,6 +1,5 @@
 package com.example.myapp.data.remote
 
-// matches TheMealDB fields we actually use
 data class MealDbRaw(
     val idMeal: String?,
     val strMeal: String?,

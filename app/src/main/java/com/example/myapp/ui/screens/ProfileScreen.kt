@@ -186,7 +186,6 @@ private fun EditRecipesTab(repo: Repository, onOpenDetail: (String) -> Unit) {
         }
     }
 
-    // Edit Dialog
     selectedMeal?.let { meal ->
         if (showEditDialog) {
             EditRecipeDialog(
@@ -278,7 +277,6 @@ private fun EditRecipeDialog(
     var notes by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
 
-    // Load existing notes
     LaunchedEffect(meal.id) {
         scope.launch {
             val savedRecipe = repo.getSavedRecipeWithNotes(meal.id)

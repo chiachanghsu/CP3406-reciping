@@ -23,7 +23,6 @@ fun RecipeDetailScreen(repo: Repository, mealId: String) {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Load saved notes if recipe is saved
     LaunchedEffect(mealId) {
         scope.launch {
             val savedRecipe = repo.getSavedRecipeWithNotes(mealId)

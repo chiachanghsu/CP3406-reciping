@@ -19,7 +19,6 @@ object Repository {
         db = AppDatabase.get(context)
     }
 
-    // Convert MealDbRaw to Meal
     private fun MealDbRaw.toMeal(): Meal {
         val ingredients = mutableMapOf<String, String>()
         val ingredientFields = listOf(
@@ -51,7 +50,6 @@ object Repository {
         )
     }
 
-    // Saved recipes
     val saved: Flow<List<Meal>>
         get() = db.savedDao().getAllSaved().map { list ->
             list.map { 
@@ -105,14 +103,13 @@ object Repository {
         val isCurrentlySaved = db.savedDao().isSaved(meal.id).first()
         return if (isCurrentlySaved) {
             remove(meal.id)
-            false // Return false = unsaved
+            false
         } else {
             save(meal)
-            true // Return true = saved
+            true
         }
     }
 
-    // Remote API calls
     suspend fun random(): Meal? {
         return try {
             val response = mealApi.getRandom()

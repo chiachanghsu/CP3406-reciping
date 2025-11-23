@@ -19,7 +19,6 @@ fun AppTheme(
     )
 }
 
-// If your screens reference MyAndroidAppTheme, keep this shim:
 @Composable
 fun MyAndroidAppTheme(
     darkTheme: Boolean = false,
